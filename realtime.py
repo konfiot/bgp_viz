@@ -6,8 +6,13 @@ import signal
 import sys
 import networkx as nx
 from colorama import Fore, Back, Style, init
+import matplotlib.pyplot as plt
 
-AS_TO_DISPLAY = 513
+AS_TO_DISPLAY = 513 # CERN
+AS_TO_DISPLAY = 15169 # Google
+
+MESSAGES_TO_GATHER = 1e5
+#MESSAGES_TO_GATHER = 1e2
 
 init() # Init colors
 
@@ -54,7 +59,11 @@ ws.send(json.dumps({
 # ASN Graph
 ASNs = nx.DiGraph()
 
+messages_recieved = 0
+
 for data in ws:
+	messages_recieved+=1
+
 	parsed = json.loads(data)
 
 	news = set() # Newly announced routes
@@ -96,5 +105,31 @@ for data in ws:
 
 			
 
-#	if ASNs.has_node(AS_TO_DISPLAY):
-#		print(f"AS {AS_TO_DISPLAY} has {len(ASNs.edges(AS_TO_DISPLAY))} neighbors : " + ', '.join(map(str, [x for _, x in ASNs.edges(AS_TO_DISPLAY)])))
+	if ASNs.has_node(AS_TO_DISPLAY) and messages_recieved > MESSAGES_TO_GATHER:
+		#plt.yscale('log')
+		#plt.xscale('log')
+
+		print("Collection complete")
+		print("Positioning")
+		#pos=nx.spring_layout(ASNs)
+		pos=nx.kamada_kawai_layout(ASNs)
+		labels = {}
+		
+		print("Assigning labels")
+		for node, degree in ASNs.degree():
+			if degree > 10:
+				labels[node] = node
+
+		print("Drawing")
+		nx.draw(ASNs, pos, arrows=False, with_labels=False, node_color=["r" if x == AS_TO_DISPLAY else "skyblue" for x in ASNs.nodes()], node_size=[3*x for _, x in ASNs.degree()], width=0.3, alpha=0.7)
+
+		print("drawing labels")
+		nx.draw_networkx_labels(ASNs, pos, labels, font_size=8)
+
+		plt.show()
+
+		print(f"AS {AS_TO_DISPLAY} has {len(ASNs.edges(AS_TO_DISPLAY))} neighbors : " + ', '.join(map(str, [x for _, x in ASNs.edges(AS_TO_DISPLAY)])))
+
+		exit(0)
+	else:
+		print(int((messages_recieved/MESSAGES_TO_GATHER)*100), "% complete", end="\r")
