@@ -4,6 +4,9 @@ import logging
 import curses
 import signal
 import sys
+import glob
+import math
+import json
 import networkx as nx
 from colorama import Fore, Back, Style, init
 import matplotlib.pyplot as plt
@@ -11,8 +14,29 @@ import matplotlib.pyplot as plt
 AS_TO_DISPLAY = 513 # CERN
 AS_TO_DISPLAY = 15169 # Google
 
+DEGREE_DISPLAY_LABEL = 50
+
 MESSAGES_TO_GATHER = 1e5
 #MESSAGES_TO_GATHER = 1e2
+
+def extract_core(ASNs):
+	cont = True
+	G = ASNs.copy()
+	while cont:
+		cont = False
+		for node, degree in G.copy().degree():
+			if degree <= 2:
+				G.remove_node(node)
+				cont = True
+	return G.nodes()
+
+
+
+def restore_terminal(signal, frame):
+	curses.echo()
+	curses.nocbreak()
+	curses.endwin()
+	sys.exit(0)
 
 init() # Init colors
 
@@ -21,15 +45,38 @@ init() # Init colors
 #curses.noecho()
 #curses.cbreak()
 
-def restore_terminal(signal, frame):
-	curses.echo()
-	curses.nocbreak()
-	curses.endwin()
-	sys.exit(0)
 
 signal.signal(signal.SIGINT, restore_terminal)
 signal.signal(signal.SIGTERM, restore_terminal)
 
+# Create ASN to countries mapping
+AS_countries = {}
+AS_files = glob.glob("./db/*_asn")
+for AS_file in AS_files:
+	with open(AS_file, "r") as AS_fd:
+		line = AS_fd.readline()
+		while line:
+			AS = int(line[2:].strip())
+			country = AS_file.split("/")[-1][0:2].upper()
+			AS_countries[AS] = country
+
+			line = AS_fd.readline()
+
+country_continent = {}
+with open("continents.json", "r") as continent_file:
+	continents = json.load(continent_file)
+	for continent in continents:
+		country_continent[continent["Two_Letter_Country_Code"]] = continent["Continent_Name"]
+
+colors = {
+	"Antartica": "skyblue",
+	"Asia": "yellow",
+	"Africa": "violet",
+	"Europe": "blue",
+	"North America": "tan",
+	"Oceania": "seagreen",
+	"South America": "orange"
+}
 
 # Init logging
 logging.basicConfig(level=logging.WARNING)
@@ -106,22 +153,27 @@ for data in ws:
 			
 
 	if ASNs.has_node(AS_TO_DISPLAY) and messages_recieved > MESSAGES_TO_GATHER:
-		#plt.yscale('log')
-		#plt.xscale('log')
+		#plt.yscale('symlog')
+		#plt.xscale('symlog')
+		print(len(ASNs.nodes()), "nodes to display")
 
 		print("Collection complete")
+		print("Calculating core")
+
+		core = extract_core(ASNs)
+
 		print("Positioning")
-		#pos=nx.spring_layout(ASNs)
-		pos=nx.kamada_kawai_layout(ASNs)
+		pos=nx.spring_layout(ASNs)
+		#pos=nx.kamada_kawai_layout(ASNs)
 		labels = {}
 		
 		print("Assigning labels")
 		for node, degree in ASNs.degree():
-			if degree > 10:
+			if degree > DEGREE_DISPLAY_LABEL:
 				labels[node] = node
 
 		print("Drawing")
-		nx.draw(ASNs, pos, arrows=False, with_labels=False, node_color=["r" if x == AS_TO_DISPLAY else "skyblue" for x in ASNs.nodes()], node_size=[3*x for _, x in ASNs.degree()], width=0.3, alpha=0.7)
+		nx.draw(ASNs, pos, arrowstyle="->", with_labels=False, node_color=["r" if x in core else colors[country_continent[AS_countries[x]]] if x in AS_countries else "black" for x in ASNs.nodes()], node_size=[3*x**(2/3) for _, x in ASNs.degree()], width=0.3, edge_color="grey", alpha=0.7)
 
 		print("drawing labels")
 		nx.draw_networkx_labels(ASNs, pos, labels, font_size=8)

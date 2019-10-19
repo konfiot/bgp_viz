@@ -1,1 +1,6 @@
 .*.un~
+*.html
+db/
+*.json
+*.txt
+
