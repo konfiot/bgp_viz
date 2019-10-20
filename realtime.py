@@ -7,6 +7,9 @@ import sys
 import glob
 import math
 import json
+import random
+import time
+from datetime import datetime
 import networkx as nx
 from colorama import Fore, Back, Style, init
 import matplotlib.pyplot as plt
@@ -19,6 +22,12 @@ DEGREE_DISPLAY_LABEL = 50
 MESSAGES_TO_GATHER = 1e5
 #MESSAGES_TO_GATHER = 1e2
 
+#SAVE_INTERVAL = 60*2
+SAVE_INTERVAL = 10
+
+DISPLAY = False
+SAVE = True
+
 def extract_core(ASNs):
 	cont = True
 	G = ASNs.copy()
@@ -30,7 +39,11 @@ def extract_core(ASNs):
 				cont = True
 	return G.nodes()
 
-
+def wiggle(t, r):
+	a,b = t
+	a += random.uniform(-r,r)
+	b += random.uniform(-r,r)
+	return (a,b)
 
 def restore_terminal(signal, frame):
 	curses.echo()
@@ -78,6 +91,16 @@ colors = {
 	"South America": "orange"
 }
 
+initial_positions = {
+	"Antartica": (0.1, 0.1),
+	"Asia": (0.9, 0.5),
+	"Africa": (0.5, 0.1),
+	"Europe": (0.5, 0.9),
+	"North America": (0.1, 0.9),
+	"Oceania": (0.9, 0.1),
+	"South America": (0.1,0.5)
+}
+
 # Init logging
 logging.basicConfig(level=logging.WARNING)
 
@@ -107,6 +130,8 @@ ws.send(json.dumps({
 ASNs = nx.DiGraph()
 
 messages_recieved = 0
+
+last_time_saved = time.time()
 
 for data in ws:
 	messages_recieved+=1
@@ -146,15 +171,23 @@ for data in ws:
 
 				subnets = ASNs.edges[int(AS), int(neighbor)]["subnets"] if ASNs.has_edge(int(AS), int(neighbor)) else set()
 
-				ASNs.add_edge(int(AS), int(neighbor), subnets = (subnets | news) - withdrawn)
+				new_subnets = (subnets | news) - withdrawn
+				ASNs.add_edge(int(AS), int(neighbor), subnets = new_subnets, weight=len(new_subnets))
 
 					#logging.info(Fore.GREEN + f"CREATED Route to {new} to path between {AS} and {neighbor}, {len(ASNs[AS]['neighbors'][neighbor])} routes left" + Style.RESET_ALL)
 
-			
 
-	if ASNs.has_node(AS_TO_DISPLAY) and messages_recieved > MESSAGES_TO_GATHER:
-		#plt.yscale('symlog')
-		#plt.xscale('symlog')
+	# Save
+	if SAVE and time.time() - last_time_saved >= SAVE_INTERVAL:
+		filename = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+		print("Saving graph,", len(ASNs.nodes), "nodes...", end="")
+		nx.readwrite.gml.write_gml(ASNs, f"out/{filename}.gml.gz", stringizer=lambda x: str(list(x)))
+		print(" Saved")
+		last_time_saved = time.time()
+
+
+	# Display
+	if DISPLAY and ASNs.has_node(AS_TO_DISPLAY) and messages_recieved > MESSAGES_TO_GATHER:
 		print(len(ASNs.nodes()), "nodes to display")
 
 		print("Collection complete")
@@ -163,8 +196,14 @@ for data in ws:
 		core = extract_core(ASNs)
 
 		print("Positioning")
-		pos=nx.spring_layout(ASNs)
-		#pos=nx.kamada_kawai_layout(ASNs)
+
+		pos = {}
+		for node in ASNs.nodes():
+			pos[node] = wiggle((0.5, 0.5) if node in core else initial_positions[country_continent[AS_countries[node]]] if node in AS_countries else (0.1,0.1), 0.1)
+
+		pos=nx.spring_layout(ASNs, pos=pos)
+		#pos=nx.kamada_kawai_layout(ASNs, pos=pos)
+		#pos=nx.spectral_layout(ASNs)
 		labels = {}
 		
 		print("Assigning labels")
@@ -180,8 +219,8 @@ for data in ws:
 
 		plt.show()
 
-		print(f"AS {AS_TO_DISPLAY} has {len(ASNs.edges(AS_TO_DISPLAY))} neighbors : " + ', '.join(map(str, [x for _, x in ASNs.edges(AS_TO_DISPLAY)])))
+		print(f"AS {AS_TO_DISPLAY} has {len(list(nx.all_neighbors(ASNs, AS_TO_DISPLAY)))} neighbors : " + ', '.join(map(str, [x for _, x in nx.all_neighbors(ASNs, AS_TO_DISPLAY)])))
 
 		exit(0)
-	else:
+	elif DISPLAY:
 		print(int((messages_recieved/MESSAGES_TO_GATHER)*100), "% complete", end="\r")
