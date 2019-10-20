@@ -1,6 +1,7 @@
 .*.un~
 *.html
 db/
+out/
 *.json
 *.txt
 
