@@ -22,11 +22,11 @@ DEGREE_DISPLAY_LABEL = 50
 MESSAGES_TO_GATHER = 1e5
 #MESSAGES_TO_GATHER = 1e2
 
-SAVE_INTERVAL = 60*2
+SAVE_INTERVAL = 60
 #SAVE_INTERVAL = 10
 
-DISPLAY = True
-SAVE = False
+DISPLAY = False
+SAVE = True
 
 def extract_core(ASNs):
 	cont = True
@@ -134,7 +134,7 @@ messages_recieved = 0
 last_time_saved = time.time()
 
 for data in ws:
-	messages_recieved+=1
+	#messages_recieved+=1
 
 	parsed = json.loads(data)
 
@@ -161,18 +161,19 @@ for data in ws:
 
 		for i, AS in enumerate(path) :
 			# Add new routes
+			AS = int(AS)
 
 			if i < (len(path) - 1):
-				neighbor = path[i+1]
+				neighbor = int(path[i+1])
 
 				if neighbor == AS:
-					logging.debug(Fore.YELLOW + f"DIDN'T ADD NOR CREATE : Circling on SELF : path between {AS} and {neighbor}" + Style.RESET_ALL)
+					#logging.debug(Fore.YELLOW + f"DIDN'T ADD NOR CREATE : Circling on SELF : path between {AS} and {neighbor}" + Style.RESET_ALL)
 					continue
 
-				subnets = ASNs.edges[int(AS), int(neighbor)]["subnets"] if ASNs.has_edge(int(AS), int(neighbor)) else set()
+				subnets = ASNs.edges[AS, neighbor]["subnets"] if ASNs.has_edge(AS, neighbor) else set()
 
 				new_subnets = (subnets | news) - withdrawn
-				ASNs.add_edge(int(AS), int(neighbor), subnets = new_subnets, weight=len(new_subnets))
+				ASNs.add_edge(AS, neighbor, subnets = new_subnets, weight=len(new_subnets))
 
 					#logging.info(Fore.GREEN + f"CREATED Route to {new} to path between {AS} and {neighbor}, {len(ASNs[AS]['neighbors'][neighbor])} routes left" + Style.RESET_ALL)
 
@@ -187,40 +188,40 @@ for data in ws:
 
 
 	# Display
-	if DISPLAY and ASNs.has_node(AS_TO_DISPLAY) and messages_recieved > MESSAGES_TO_GATHER:
-		print(len(ASNs.nodes()), "nodes to display")
-
-		print("Collection complete")
-		print("Calculating core")
-
-		core = extract_core(ASNs)
-
-		print("Positioning")
-
-		pos = {}
-		for node in ASNs.nodes():
-			pos[node] = wiggle((0.5, 0.5) if node in core else initial_positions[country_continent[AS_countries[node]]] if node in AS_countries else (0.5,0.5), 0.1)
-
-		pos=nx.spring_layout(ASNs, pos=pos)
-		#pos=nx.kamada_kawai_layout(ASNs, pos=pos)
-		#pos=nx.spectral_layout(ASNs)
-		labels = {}
-		
-		print("Assigning labels")
-		for node, degree in ASNs.degree():
-			if degree > DEGREE_DISPLAY_LABEL:
-				labels[node] = node
-
-		print("Drawing")
-		nx.draw(ASNs, pos, arrowstyle="->", with_labels=False, node_color=["r" if x in core else colors[country_continent[AS_countries[x]]] if x in AS_countries else "black" for x in ASNs.nodes()], node_size=[3*x**(2/3) for _, x in ASNs.degree()], width=0.3, edge_color="grey", alpha=0.7)
-
-		print("drawing labels")
-		nx.draw_networkx_labels(ASNs, pos, labels, font_size=8)
-
-		plt.show()
-
-		print(f"AS {AS_TO_DISPLAY} has {len(list(nx.all_neighbors(ASNs, AS_TO_DISPLAY)))} neighbors : " + ', '.join(map(str, [x for _, x in nx.all_neighbors(ASNs, AS_TO_DISPLAY)])))
-
-		exit(0)
-	elif DISPLAY:
-		print(int((messages_recieved/MESSAGES_TO_GATHER)*100), "% complete", end="\r")
+#	if DISPLAY and ASNs.has_node(AS_TO_DISPLAY) and messages_recieved > MESSAGES_TO_GATHER:
+#		print(len(ASNs.nodes()), "nodes to display")
+#
+#		print("Collection complete")
+#		print("Calculating core")
+#
+#		core = extract_core(ASNs)
+#
+#		print("Positioning")
+#
+#		pos = {}
+#		for node in ASNs.nodes():
+#			pos[node] = wiggle((0.5, 0.5) if node in core else initial_positions[country_continent[AS_countries[node]]] if node in AS_countries else (0.5,0.5), 0.1)
+#
+#		pos=nx.spring_layout(ASNs, pos=pos)
+#		#pos=nx.kamada_kawai_layout(ASNs, pos=pos)
+#		#pos=nx.spectral_layout(ASNs)
+#		labels = {}
+#		
+#		print("Assigning labels")
+#		for node, degree in ASNs.degree():
+#			if degree > DEGREE_DISPLAY_LABEL:
+#				labels[node] = node
+#
+#		print("Drawing")
+#		nx.draw(ASNs, pos, arrowstyle="->", with_labels=False, node_color=["r" if x in core else colors[country_continent[AS_countries[x]]] if x in AS_countries else "black" for x in ASNs.nodes()], node_size=[3*x**(2/3) for _, x in ASNs.degree()], width=0.3, edge_color="grey", alpha=0.7)
+#
+#		print("drawing labels")
+#		nx.draw_networkx_labels(ASNs, pos, labels, font_size=8)
+#
+#		plt.show()
+#
+#		print(f"AS {AS_TO_DISPLAY} has {len(list(nx.all_neighbors(ASNs, AS_TO_DISPLAY)))} neighbors : " + ', '.join(map(str, [x for _, x in nx.all_neighbors(ASNs, AS_TO_DISPLAY)])))
+#
+#		exit(0)
+#	elif DISPLAY:
+#		print(int((messages_recieved/MESSAGES_TO_GATHER)*100), "% complete", end="\r")
