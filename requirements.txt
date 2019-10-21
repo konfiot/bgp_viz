@@ -1,3 +1,4 @@
+pybgpstream==1.2.3
 colorama==0.4.1
 networkx==2.4
 websocket-client==0.56.0
