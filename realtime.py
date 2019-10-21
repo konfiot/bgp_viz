@@ -1,4 +1,4 @@
-import json
+import orjson as json
 import websocket
 import logging
 import curses
@@ -103,7 +103,7 @@ logging.basicConfig(level=logging.WARNING)
 
 # Vonnect to feed
 ws = websocket.WebSocket()
-ws.connect("wss://ris-live.ripe.net/v1/ws/?client=bgpm")
+ws.connect("ws://ris-live.ripe.net/v1/ws/?client=bgpm")
 
 params = {
 	"moreSpecific": True,
