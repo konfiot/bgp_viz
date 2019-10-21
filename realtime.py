@@ -106,13 +106,13 @@ ws = websocket.WebSocket()
 ws.connect("ws://ris-live.ripe.net/v1/ws/?client=bgpm")
 
 params = {
-	"moreSpecific": True,
+	"moreSpecific": False,
 	#"host": "rrc21",
 	"type": "UPDATE",
 	#"prefix": "216.238.254.0/23",
 	#"path": str(AS_TO_DISPLAY),
 	"socketOptions": {
-		"includeRaw": True
+		"includeRaw": False
 	}
 }
 
@@ -135,14 +135,14 @@ for data in ws:
 
 	parsed = json.loads(data)
 
-	news = set() # Newly announced routes
-	withdrawn = set()
+	news = [] # Newly announced routes
+	withdrawn = []
 	if "withdrawals" in parsed["data"].keys():
-		withdrawn = set(parsed["data"]["withdrawals"]) # Withdrawn routes
+		withdrawn = parsed["data"]["withdrawals"] # Withdrawn routes
 
 	if "announcements" in parsed["data"].keys():
 		for announcement in parsed["data"]["announcements"]:
-			news.update(announcement["prefixes"])
+			news.append(announcement["prefixes"])
 
 	if "path" in parsed["data"].keys() and len(parsed["data"]["path"]) > 1: #TODO : Gérer mieux le cas à 1 dans le path, voire 0
 		path_raw = parsed["data"]["path"]
@@ -167,9 +167,10 @@ for data in ws:
 					#logging.debug(Fore.YELLOW + f"DIDN'T ADD NOR CREATE : Circling on SELF : path between {AS} and {neighbor}" + Style.RESET_ALL)
 					continue
 
-				subnets = ASNs.edges[AS, neighbor]["subnets"] if ASNs.has_edge(AS, neighbor) else set()
+				subnets = ASNs.edges[AS, neighbor]["subnets"] if ASNs.has_edge(AS, neighbor) else[] 
 
-				new_subnets = (subnets | news) - withdrawn
+				news = [x for x in news if x not in subnets]
+				new_subnets = [x for x in subnets+news if x not in withdrawn]
 				ASNs.add_edge(AS, neighbor, subnets = new_subnets, weight=len(new_subnets))
 
 					#logging.info(Fore.GREEN + f"CREATED Route to {new} to path between {AS} and {neighbor}, {len(ASNs[AS]['neighbors'][neighbor])} routes left" + Style.RESET_ALL)
