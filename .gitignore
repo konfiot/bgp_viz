@@ -3,5 +3,4 @@
 db/
 out/
 *.json
-*.txt
-
+*.tar.gz
