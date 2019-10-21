@@ -112,7 +112,7 @@ params = {
 	#"prefix": "216.238.254.0/23",
 	#"path": str(AS_TO_DISPLAY),
 	"socketOptions": {
-		"includeRaw": True
+		"includeRaw": False
 	}
 }
 
