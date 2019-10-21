@@ -22,11 +22,11 @@ DEGREE_DISPLAY_LABEL = 50
 MESSAGES_TO_GATHER = 1e5
 #MESSAGES_TO_GATHER = 1e2
 
-#SAVE_INTERVAL = 60*2
-SAVE_INTERVAL = 10
+SAVE_INTERVAL = 60*2
+#SAVE_INTERVAL = 10
 
-DISPLAY = False
-SAVE = True
+DISPLAY = True
+SAVE = False
 
 def extract_core(ASNs):
 	cont = True
@@ -199,7 +199,7 @@ for data in ws:
 
 		pos = {}
 		for node in ASNs.nodes():
-			pos[node] = wiggle((0.5, 0.5) if node in core else initial_positions[country_continent[AS_countries[node]]] if node in AS_countries else (0.1,0.1), 0.1)
+			pos[node] = wiggle((0.5, 0.5) if node in core else initial_positions[country_continent[AS_countries[node]]] if node in AS_countries else (0.5,0.5), 0.1)
 
 		pos=nx.spring_layout(ASNs, pos=pos)
 		#pos=nx.kamada_kawai_layout(ASNs, pos=pos)
