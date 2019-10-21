@@ -14,9 +14,6 @@ import networkx as nx
 from colorama import Fore, Back, Style, init
 import matplotlib.pyplot as plt
 
-AS_TO_DISPLAY = 513 # CERN
-AS_TO_DISPLAY = 15169 # Google
-
 DEGREE_DISPLAY_LABEL = 50
 
 MESSAGES_TO_GATHER = 1e5
@@ -188,7 +185,7 @@ for data in ws:
 
 
 	# Display
-#	if DISPLAY and ASNs.has_node(AS_TO_DISPLAY) and messages_recieved > MESSAGES_TO_GATHER:
+#	if DISPLAY and messages_recieved > MESSAGES_TO_GATHER:
 #		print(len(ASNs.nodes()), "nodes to display")
 #
 #		print("Collection complete")
@@ -219,8 +216,6 @@ for data in ws:
 #		nx.draw_networkx_labels(ASNs, pos, labels, font_size=8)
 #
 #		plt.show()
-#
-#		print(f"AS {AS_TO_DISPLAY} has {len(list(nx.all_neighbors(ASNs, AS_TO_DISPLAY)))} neighbors : " + ', '.join(map(str, [x for _, x in nx.all_neighbors(ASNs, AS_TO_DISPLAY)])))
 #
 #		exit(0)
 #	elif DISPLAY:
