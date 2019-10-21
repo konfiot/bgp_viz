@@ -1,5 +1,10 @@
 # Installing
 
+## Install dependancies
+Install libpybgpstream using instructions here (use the instructions tailored for your distribution) : https://bgpstream.caida.org/docs/install/bgpstream
+
+Install python packages using pip : `pip install -r requirements.txt`
+
 ## Download db files
 ```
 wget www.cc2asn.com/data/db.tar.gz
