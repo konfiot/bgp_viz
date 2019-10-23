@@ -9,6 +9,7 @@ import math
 import json
 import random
 import time
+import multiprocessing
 from datetime import datetime
 import networkx as nx
 from colorama import Fore, Back, Style, init
@@ -19,7 +20,7 @@ DEGREE_DISPLAY_LABEL = 50
 MESSAGES_TO_GATHER = 1e5
 #MESSAGES_TO_GATHER = 1e2
 
-SAVE_INTERVAL = 60
+SAVE_INTERVAL = 60*30
 #SAVE_INTERVAL = 10
 
 DISPLAY = False
@@ -41,6 +42,14 @@ def wiggle(t, r):
 	a += random.uniform(-r,r)
 	b += random.uniform(-r,r)
 	return (a,b)
+
+def save_graph(ASNs):
+	print("Saving graph,", len(ASNs.nodes), "nodes...", end="")
+	for edge in ASNs.edges(data=True):
+		edge[2]["subnets"] = list(edge[2]["subnets"].keys())
+	nx.readwrite.gml.write_gml(ASNs, f"out/{filename}.gml.gz", stringizer=nx.readwrite.gml.literal_stringizer)
+	print(" Saved")
+
 
 def restore_terminal(signal, frame):
 	curses.echo()
@@ -167,11 +176,27 @@ for data in ws:
 					#logging.debug(Fore.YELLOW + f"DIDN'T ADD NOR CREATE : Circling on SELF : path between {AS} and {neighbor}" + Style.RESET_ALL)
 					continue
 
-				subnets = ASNs.edges[AS, neighbor]["subnets"] if ASNs.has_edge(AS, neighbor) else[] 
+				subnets = dict()
 
-				news = [x for x in news if x not in subnets]
-				new_subnets = [x for x in subnets+news if x not in withdrawn]
-				ASNs.add_edge(AS, neighbor, subnets = new_subnets, weight=len(new_subnets))
+				try:
+					subnets = ASNs.edges[AS, neighbor]["subnets"]
+				except:
+					pass
+
+
+				for x in news:
+					if isinstance(x, list):
+						for y in x:
+							subnets[y] = True
+					else:
+						subnets[x] = True
+				for x in withdrawn:
+					try:
+						del subnets[x]
+					except KeyError:
+						pass
+
+				ASNs.add_edge(AS, neighbor, subnets = subnets, weight=len(subnets))
 
 					#logging.info(Fore.GREEN + f"CREATED Route to {new} to path between {AS} and {neighbor}, {len(ASNs[AS]['neighbors'][neighbor])} routes left" + Style.RESET_ALL)
 
@@ -179,9 +204,10 @@ for data in ws:
 	# Save
 	if SAVE and time.time() - last_time_saved >= SAVE_INTERVAL:
 		filename = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-		print("Saving graph,", len(ASNs.nodes), "nodes...", end="")
-		nx.readwrite.gml.write_gml(ASNs, f"out/{filename}.gml.gz", stringizer=lambda x: str(list(x)))
-		print(" Saved")
+		save_process = multiprocessing.Process(target=save_graph, args=(ASNs.copy(),))
+                
+		save_process.start()
+
 		last_time_saved = time.time()
 
 
