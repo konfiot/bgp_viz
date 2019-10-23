@@ -44,7 +44,7 @@ def wiggle(t, r):
 	return (a,b)
 
 def save_graph(ASNs):
-	print("Saving graph,", len(ASNs.nodes), "nodes...", end="")
+	print("Saving graph,", len(ASNs.nodes), "nodes,", len(ASNs.edges()), "edges...", end="")
 	for edge in ASNs.edges(data=True):
 		edge[2]["subnets"] = list(edge[2]["subnets"].keys())
 	nx.readwrite.gml.write_gml(ASNs, f"out/{filename}.gml.gz", stringizer=nx.readwrite.gml.literal_stringizer)
