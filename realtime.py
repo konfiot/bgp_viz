@@ -144,6 +144,9 @@ for data in ws:
 
 	parsed = json.loads(data)
 
+	if parsed["type"] != "ris_message":
+		print(parsed)
+	
 	news = [] # Newly announced routes
 	withdrawn = []
 	if "withdrawals" in parsed["data"].keys():
