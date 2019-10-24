@@ -110,10 +110,6 @@ initial_positions = {
 # Init logging
 logging.basicConfig(level=logging.WARNING)
 
-# Vonnect to feed
-ws = websocket.WebSocket()
-ws.connect("ws://ris-live.ripe.net/v1/ws/?client=bgpm")
-
 params = {
 	"moreSpecific": False,
 	#"host": "rrc21",
@@ -125,93 +121,100 @@ params = {
 	}
 }
 
-# Subscribe
-ws.send(json.dumps({
-	"type": "ris_subscribe",
-	"data": params
-	}))
+def connect(params):
+	ws = websocket.WebSocket()
+	ws.connect("ws://ris-live.ripe.net/v1/ws/?client=bgpm")
+	ws.send(json.dumps({
+		"type": "ris_subscribe",
+		"data": params
+		}))
+	return ws
+
 
 
 # ASN Graph
 ASNs = nx.DiGraph()
 
-messages_recieved = 0
-
 last_time_saved = time.time()
 
-for data in ws:
-	#messages_recieved+=1
 
-	parsed = json.loads(data)
+while True:
+	ws = connect(params)
+	try:
+		for data in ws:
+			parsed = json.loads(data)
 
-	if parsed["type"] != "ris_message":
-		print(parsed)
-	
-	news = [] # Newly announced routes
-	withdrawn = []
-	if "withdrawals" in parsed["data"].keys():
-		withdrawn = parsed["data"]["withdrawals"] # Withdrawn routes
+			if parsed["type"] != "ris_message":
+				print(parsed)
+			
+			news = [] # Newly announced routes
+			withdrawn = []
+			if "withdrawals" in parsed["data"].keys():
+				withdrawn = parsed["data"]["withdrawals"] # Withdrawn routes
 
-	if "announcements" in parsed["data"].keys():
-		for announcement in parsed["data"]["announcements"]:
-			news.append(announcement["prefixes"])
+			if "announcements" in parsed["data"].keys():
+				for announcement in parsed["data"]["announcements"]:
+					news.append(announcement["prefixes"])
 
-	if "path" in parsed["data"].keys() and len(parsed["data"]["path"]) > 1: #TODO : Gérer mieux le cas à 1 dans le path, voire 0
-		path_raw = parsed["data"]["path"]
-		path = []
-		for AS in path_raw:
-			if isinstance(AS, int):
-				path.append(AS)
-			else:
-				for real_AS in AS:
-					path.append(real_AS)
-
-		#logging.debug(f"Processing path {path} announce {news} withdraw {withdrawn}")
-
-		for i, AS in enumerate(path) :
-			# Add new routes
-			AS = int(AS)
-
-			if i < (len(path) - 1):
-				neighbor = int(path[i+1])
-
-				if neighbor == AS:
-					#logging.debug(Fore.YELLOW + f"DIDN'T ADD NOR CREATE : Circling on SELF : path between {AS} and {neighbor}" + Style.RESET_ALL)
-					continue
-
-				subnets = dict()
-
-				try:
-					subnets = ASNs.edges[AS, neighbor]["subnets"]
-				except:
-					pass
-
-
-				for x in news:
-					if isinstance(x, list):
-						for y in x:
-							subnets[y] = True
+			if "path" in parsed["data"].keys() and len(parsed["data"]["path"]) > 1: #TODO : Gérer mieux le cas à 1 dans le path, voire 0
+				path_raw = parsed["data"]["path"]
+				path = []
+				for AS in path_raw:
+					if isinstance(AS, int):
+						path.append(AS)
 					else:
-						subnets[x] = True
-				for x in withdrawn:
-					try:
-						del subnets[x]
-					except KeyError:
-						pass
+						for real_AS in AS:
+							path.append(real_AS)
 
-				ASNs.add_edge(AS, neighbor, subnets = subnets, weight=len(subnets))
+				#logging.debug(f"Processing path {path} announce {news} withdraw {withdrawn}")
 
-					#logging.info(Fore.GREEN + f"CREATED Route to {new} to path between {AS} and {neighbor}, {len(ASNs[AS]['neighbors'][neighbor])} routes left" + Style.RESET_ALL)
+				for i, AS in enumerate(path) :
+					# Add new routes
+					AS = int(AS)
+
+					if i < (len(path) - 1):
+						neighbor = int(path[i+1])
+
+						if neighbor == AS:
+							#logging.debug(Fore.YELLOW + f"DIDN'T ADD NOR CREATE : Circling on SELF : path between {AS} and {neighbor}" + Style.RESET_ALL)
+							continue
+
+						subnets = dict()
+
+						try:
+							subnets = ASNs.edges[AS, neighbor]["subnets"]
+						except:
+							pass
 
 
-	# Save
-	if SAVE and time.time() - last_time_saved >= SAVE_INTERVAL:
-		filename = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-		save_process = multiprocessing.Process(target=save_graph, args=(ASNs.copy(),))
-                
-		save_process.start()
+						for x in news:
+							if isinstance(x, list):
+								for y in x:
+									subnets[y] = True
+							else:
+								subnets[x] = True
+						for x in withdrawn:
+							try:
+								del subnets[x]
+							except KeyError:
+								pass
 
-		last_time_saved = time.time()
+						ASNs.add_edge(AS, neighbor, subnets = subnets, weight=len(subnets))
+
+							#logging.info(Fore.GREEN + f"CREATED Route to {new} to path between {AS} and {neighbor}, {len(ASNs[AS]['neighbors'][neighbor])} routes left" + Style.RESET_ALL)
+
+
+			# Save
+			if SAVE and time.time() - last_time_saved >= SAVE_INTERVAL:
+				filename = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+				save_process = multiprocessing.Process(target=save_graph, args=(ASNs.copy(),))
+						
+				save_process.start()
+
+				last_time_saved = time.time()
+	except websocket._exceptions.WebSocketConnectionClosedException:
+		print("Socket closed, retrying")
+		pass
 
 
 	# Display
