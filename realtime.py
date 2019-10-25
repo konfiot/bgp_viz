@@ -215,7 +215,7 @@ while True:
 	except websocket._exceptions.WebSocketConnectionClosedException:
 		print("Socket closed, retrying")
 		pass
-	except websocket._exceptions.WebSocketBadStatusException as err
+        except websocket._exceptions.WebSocketBadStatusException as err:
 		print("Bad status error :", err)
 		pass
 
