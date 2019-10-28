@@ -199,7 +199,13 @@ while True:
 							except KeyError:
 								pass
 
-						ASNs.add_edge(AS, neighbor, subnets = subnets, weight=len(subnets))
+						if len(subnets) > 0:
+							ASNs.add_edge(AS, neighbor, subnets = subnets, weight=len(subnets))
+						else:
+							try:
+								ASNs.remove_edge(AS,neighbor)
+							except:
+								pass
 
 							#logging.info(Fore.GREEN + f"CREATED Route to {new} to path between {AS} and {neighbor}, {len(ASNs[AS]['neighbors'][neighbor])} routes left" + Style.RESET_ALL)
 
