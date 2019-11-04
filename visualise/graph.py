@@ -8,6 +8,7 @@ import json
 import random
 
 DEGREE_DISPLAY_LABEL = 100
+DPI = 6000
 
 def extract_core(ASNs):
 	cont = True
@@ -84,7 +85,7 @@ print("Positioning")
 
 pos = {}
 for node in ASNs.nodes():
-	pos[node] = wiggle((0.5, 0.5) if node in core else initial_positions[country_continent[AS_countries[str(node)]]] if node in AS_countries else (0.5,0.5), 0.1)
+	pos[node] = wiggle((0.5, 0.5) if node in core else initial_positions[country_continent[AS_countries[int(node)]]] if node in AS_countries else (0.5,0.5), 0.1)
 
 pos=nx.spring_layout(ASNs, pos=pos)
 #pos=nx.kamada_kawai_layout(ASNs, pos=pos)
@@ -97,12 +98,12 @@ for node, degree in ASNs.degree():
 		labels[node] = node
 
 print("Drawing")
-nx.draw(ASNs, pos, arrowstyle="->", with_labels=False, node_color=["r" if x in core else colors[country_continent[AS_countries[str(x)]]] if x in AS_countries else "black" for x in ASNs.nodes()], node_size=[3*x**(2/3) for _, x in ASNs.degree()], width=0.3, edge_color="grey", alpha=0.7)
+nx.draw(ASNs, pos, arrowstyle="->", with_labels=False, node_color=["r" if x in core else colors[country_continent[AS_countries[int(x)]]] if x in AS_countries else "black" for x in ASNs.nodes()], node_size=[3*x**(2/3) for _, x in ASNs.degree()], width=0.3, edge_color="grey", alpha=0.7)
 
 print("drawing labels")
 nx.draw_networkx_labels(ASNs, pos, labels, font_size=8)
 
-plt.savefig("out,png")
+plt.savefig("out,png", dpi=DPI)
 
 plt.show()
 
