@@ -47,7 +47,7 @@ def save_graph(ASNs):
 	print("Saving graph,", len(ASNs.nodes), "nodes,", len(ASNs.edges()), "edges...", end="")
 	for edge in ASNs.edges(data=True):
 		edge[2]["subnets"] = list(edge[2]["subnets"].keys())
-	nx.readwrite.gml.write_gml(ASNs, f"out/{filename}.gml.gz", stringizer=nx.readwrite.gml.literal_stringizer)
+	nx.readwrite.gml.write_gml(ASNs, f"out/{filename}.gml", stringizer=nx.readwrite.gml.literal_stringizer)
 	print(" Saved")
 
 
@@ -112,9 +112,7 @@ logging.basicConfig(level=logging.WARNING)
 
 params = {
 	"moreSpecific": False,
-	#"host": "rrc21",
 	"type": "UPDATE",
-	#"prefix": "216.238.254.0/23",
 	#"path": str(AS_TO_DISPLAY),
 	"socketOptions": {
 		"includeRaw": False
