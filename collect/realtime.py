@@ -135,4 +135,7 @@ while True:
 	except websocket._exceptions.WebSocketBadStatusException as err:
 		print("Bad status error :", err)
 		pass
+	except ConnectionResetError:
+		print("Connection reset")
+		pass
 
