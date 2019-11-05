@@ -48,7 +48,7 @@ ASNs = nx.DiGraph()
 
 last_time_saved = time.time()
 
-if len(sys.argv) < 1:
+if len(sys.argv) < 2:
 	print(f"usage: {sys.argv[0]} out_dir")
 	exit(0)
 
