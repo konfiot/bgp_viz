@@ -15,7 +15,7 @@ def save_graph(ASNs):
 	print("Saving graph,", len(ASNs.nodes), "nodes,", len(ASNs.edges()), "edges...", end="")
 	for edge in ASNs.edges(data=True):
 		edge[2]["subnets"] = list(edge[2]["subnets"].keys())
-	nx.readwrite.gml.write_gml(ASNs, f"out/{filename}.gml", stringizer=nx.readwrite.gml.literal_stringizer)
+	nx.readwrite.gml.write_gml(ASNs, f"{sys.argv[1]}/{filename}.gml", stringizer=nx.readwrite.gml.literal_stringizer)
 	print(" Saved")
 
 
@@ -48,6 +48,9 @@ ASNs = nx.DiGraph()
 
 last_time_saved = time.time()
 
+if len(sys.argv) < 1:
+	print(f"usage: {sys.argv[0]} out_dir}")
+	exit(0)
 
 while True:
 	ws = connect(params)
@@ -123,7 +126,7 @@ while True:
 
 			# Save
 			if time.time() - last_time_saved >= SAVE_INTERVAL:
-				filename = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+				filename = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H%M')
 				save_process = multiprocessing.Process(target=save_graph, args=(ASNs.copy(),))
 						
 				save_process.start()
