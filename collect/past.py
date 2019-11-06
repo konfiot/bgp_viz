@@ -3,7 +3,6 @@ import sys
 import time
 from datetime import datetime
 import networkx as nx
-from colorama import Fore, Back, Style, init
 from _pybgpstream import BGPStream, BGPRecord, BGPElem
 import ast
 
@@ -12,8 +11,6 @@ SAVE_INTERVAL = 30
 
 START_TIMESTAMP = 1438417216
 RECORD_PERIOD = 60*2
-
-init() # Init colors
 
 # Init logging
 logging.basicConfig(level=logging.WARNING)
