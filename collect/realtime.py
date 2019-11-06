@@ -18,8 +18,6 @@ def save_graph(ASNs):
 	print(" Saved")
 
 
-init() # Init colors
-
 # Init logging
 logging.basicConfig(level=logging.WARNING)
 
