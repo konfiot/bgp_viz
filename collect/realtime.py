@@ -1,4 +1,4 @@
-import orjson as json
+import json
 import websocket
 import logging
 import sys
@@ -6,7 +6,6 @@ import time
 import multiprocessing
 from datetime import datetime
 import networkx as nx
-from colorama import Fore, Back, Style, init
 
 SAVE_INTERVAL = 60*30
 #SAVE_INTERVAL = 10
