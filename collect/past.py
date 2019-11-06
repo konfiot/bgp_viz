@@ -19,7 +19,17 @@ logging.basicConfig(level=logging.WARNING)
 stream = BGPStream()
 rec = BGPRecord()
 
-stream.add_interval_filter(START_TIMESTAMP,START_TIMESTAMP + RECORD_PERIOD)
+#stream.add_interval_filter(START_TIMESTAMP,START_TIMESTAMP + RECORD_PERIOD)
+
+# Consider Route Views Singapore only
+stream.add_filter('collector','route-views.sg')
+
+# Consider RIBs dumps only
+stream.add_filter('record-type','ribs')
+
+# Consider this time interval:
+# Sat, 01 Aug 2015 7:50:00 GMT -  08:10:00 GMT
+stream.add_interval_filter(1438415400,1438416600)
 
 stream.start()
 
@@ -63,7 +73,7 @@ while(stream.get_next_record(rec)):
 					neighbor = path[i+1]
 
 					if neighbor == AS:
-						logging.debug(Fore.YELLOW + f"DIDN'T ADD NOR CREATE : Circling on SELF : path between {AS} and {neighbor}" + Style.RESET_ALL)
+						#logging.debug(Fore.YELLOW + f"DIDN'T ADD NOR CREATE : Circling on SELF : path between {AS} and {neighbor}" + Style.RESET_ALL)
 						continue
 
 					subnets = ASNs.edges[int(AS), int(neighbor)]["subnets"] if ASNs.has_edge(int(AS), int(neighbor)) else set()
