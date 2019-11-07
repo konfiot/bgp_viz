@@ -1,6 +1,9 @@
+# coding: utf-8
 import logging
+import multiprocessing
 import sys
 import time
+from ..common.graph import update_graph, save_graph
 from datetime import datetime
 import networkx as nx
 from _pybgpstream import BGPStream, BGPRecord, BGPElem
@@ -29,7 +32,7 @@ stream.add_filter('record-type','ribs')
 
 # Consider this time interval:
 # Sat, 01 Aug 2015 7:50:00 GMT -  08:10:00 GMT
-stream.add_interval_filter(1438415400,1438416600)
+stream.add_interval_filter(1438415400,1438517600)
 
 stream.start()
 
@@ -72,21 +75,12 @@ while(stream.get_next_record(rec)):
 				if i < (len(path) - 1):
 					neighbor = path[i+1]
 
-					if neighbor == AS:
-						#logging.debug(Fore.YELLOW + f"DIDN'T ADD NOR CREATE : Circling on SELF : path between {AS} and {neighbor}" + Style.RESET_ALL)
-						continue
-
-					subnets = ASNs.edges[int(AS), int(neighbor)]["subnets"] if ASNs.has_edge(int(AS), int(neighbor)) else set()
-
-					new_subnets = (subnets | news) - withdrawn
-					ASNs.add_edge(int(AS), int(neighbor), subnets = new_subnets, weight=len(new_subnets))
+					update_graph(ASNs, AS, neighbor, news, withdrawn)
 
 		elem = rec.get_next_elem()
 
 	# Save
 	if rec.time - last_time_saved >= SAVE_INTERVAL:
-		filename = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-		print("Saving graph,", len(ASNs.nodes), "nodes...", end="")
-		nx.readwrite.gml.write_gml(ASNs, f"out/{filename}.gml.gz", stringizer=lambda x: str(list(x)))
-		print(" Saved")
+		save_process = multiprocessing.Process(target=save_graph, args=(ASNs.copy(),))
+		save_process.start()
 		last_time_saved = rec.time

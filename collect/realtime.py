@@ -3,20 +3,13 @@ import websocket
 import logging
 import sys
 import time
+from ..common.graph import update_graph, save_graph
 import multiprocessing
 from datetime import datetime
 import networkx as nx
 
-SAVE_INTERVAL = 60*30
-#SAVE_INTERVAL = 10
-
-def save_graph(ASNs):
-	print("Saving graph,", len(ASNs.nodes), "nodes,", len(ASNs.edges()), "edges...", end="")
-	for edge in ASNs.edges(data=True):
-		edge[2]["subnets"] = list(edge[2]["subnets"].keys())
-	nx.readwrite.gml.write_gml(ASNs, f"{sys.argv[1]}/{filename}.gml.gz", stringizer=nx.readwrite.gml.literal_stringizer)
-	print(" Saved")
-
+#SAVE_INTERVAL = 60*30
+SAVE_INTERVAL = 10
 
 # Init logging
 logging.basicConfig(level=logging.WARNING)
@@ -87,48 +80,19 @@ while True:
 						neighbor = int(path[i+1])
 
 						if neighbor == AS:
-							#logging.debug(Fore.YELLOW + f"DIDN'T ADD NOR CREATE : Circling on SELF : path between {AS} and {neighbor}" + Style.RESET_ALL)
 							continue
 
 						subnets = dict()
+						update_graph(ASNs, AS, neighbor, news, withdrawn)
 
-						try:
-							subnets = ASNs.edges[AS, neighbor]["subnets"]
-						except:
-							pass
-
-
-						for x in news:
-							if isinstance(x, list):
-								for y in x:
-									subnets[y] = True
-							else:
-								subnets[x] = True
-						for x in withdrawn:
-							try:
-								del subnets[x]
-							except KeyError:
-								pass
-
-						if len(subnets) > 0:
-							ASNs.add_edge(AS, neighbor, subnets = subnets, weight=len(subnets))
-						else:
-							try:
-								ASNs.remove_edge(AS,neighbor)
-							except:
-								pass
-
-							#logging.info(Fore.GREEN + f"CREATED Route to {new} to path between {AS} and {neighbor}, {len(ASNs[AS]['neighbors'][neighbor])} routes left" + Style.RESET_ALL)
 
 
 			# Save
 			if time.time() - last_time_saved >= SAVE_INTERVAL:
-				filename = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H%M')
 				save_process = multiprocessing.Process(target=save_graph, args=(ASNs.copy(),))
-						
 				save_process.start()
-
 				last_time_saved = time.time()
+
 	except websocket._exceptions.WebSocketConnectionClosedException:
 		print("Socket closed, retrying")
 		pass
