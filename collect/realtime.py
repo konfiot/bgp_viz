@@ -8,8 +8,8 @@ import multiprocessing
 from datetime import datetime
 import networkx as nx
 
-#SAVE_INTERVAL = 60*30
-SAVE_INTERVAL = 10
+SAVE_INTERVAL = 60*30
+#SAVE_INTERVAL = 10
 
 # Init logging
 logging.basicConfig(level=logging.WARNING)
