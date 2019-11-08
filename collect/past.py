@@ -1,86 +1,78 @@
 # coding: utf-8
-import logging
 import multiprocessing
 import sys
 import time
-from ..common.graph import update_graph, save_graph
+from common.graph import update_graph, save_graph
 from datetime import datetime
 import networkx as nx
 from _pybgpstream import BGPStream, BGPRecord, BGPElem
 import ast
 
-SAVE_INTERVAL = 30
-#SAVE_INTERVAL = 10
+def do_collection(args):
+	START_TIMESTAMP = 1438417216
+	RECORD_PERIOD = 60*2
 
-START_TIMESTAMP = 1438417216
-RECORD_PERIOD = 60*2
+	# Create stream
+	stream = BGPStream()
+	rec = BGPRecord()
 
-# Init logging
-logging.basicConfig(level=logging.WARNING)
+	#stream.add_interval_filter(START_TIMESTAMP,START_TIMESTAMP + RECORD_PERIOD)
 
-# Create stream
-stream = BGPStream()
-rec = BGPRecord()
+	# Consider Route Views Singapore only
+	stream.add_filter('collector','route-views.sg')
 
-#stream.add_interval_filter(START_TIMESTAMP,START_TIMESTAMP + RECORD_PERIOD)
+	# Consider RIBs dumps only
+	stream.add_filter('record-type','ribs')
 
-# Consider Route Views Singapore only
-stream.add_filter('collector','route-views.sg')
+	# Consider this time interval:
+	# Sat, 01 Aug 2015 7:50:00 GMT -  08:10:00 GMT
+	stream.add_interval_filter(1438415400,1438517600)
 
-# Consider RIBs dumps only
-stream.add_filter('record-type','ribs')
+	stream.start()
 
-# Consider this time interval:
-# Sat, 01 Aug 2015 7:50:00 GMT -  08:10:00 GMT
-stream.add_interval_filter(1438415400,1438517600)
+	# ASN Graph
+	ASNs = nx.DiGraph()
 
-stream.start()
+	messages_recieved = 0
 
-# ASN Graph
-ASNs = nx.DiGraph()
+	last_time_saved = START_TIMESTAMP
 
-messages_recieved = 0
+	while(stream.get_next_record(rec)):
+		if rec.status != "valid":
+			print("Invalid record", rec.project, rec.collector, rec.type, rec.time, rec.status)
+			continue
 
-last_time_saved = START_TIMESTAMP
+			elem = rec.get_next_elem()
+			while(elem):
+				news = set() # Newly announced routes
+				withdrawn = set()
+				if elem.type == "W":
+					withdrawn = {elem.fields["prefix"]} # Withdrawn routes
 
-while(stream.get_next_record(rec)):
-	if rec.status != "valid":
-		print("Invalid record", rec.project, rec.collector, rec.type, rec.time, rec.status)
-		continue
+				elif elem.type in ["A", "R"]:
+					news = {elem.fields["prefix"]}
 
-	elem = rec.get_next_elem()
-	while(elem):
-		news = set() # Newly announced routes
-		withdrawn = set()
-		if elem.type == "W":
-			withdrawn = {elem.fields["prefix"]} # Withdrawn routes
+				if "as-path" in elem.fields.keys() and len(elem.fields["as-path"]) > 1: #TODO : Gérer mieux le cas à 1 dans le path, voire 0
+					path_raw = elem.fields["as-path"].split(" ")
+					path = []
+					for AS in path_raw:
+						AS = ast.literal_eval(AS)
+						if isinstance(AS, int):
+							path.append(AS)
+						else:
+							for real_AS in AS:
+								path.append(real_AS)
 
-		elif elem.type in ["A", "R"]:
-			news = {elem.fields["prefix"]}
+					for i, AS in enumerate(path) :
+						# Add new routes
+							if i < (len(path) - 1):
+								neighbor = path[i+1]
+								update_graph(ASNs, AS, neighbor, news, withdrawn)
 
-		if "as-path" in elem.fields.keys() and len(elem.fields["as-path"]) > 1: #TODO : Gérer mieux le cas à 1 dans le path, voire 0
-			path_raw = elem.fields["as-path"].split(" ")
-			path = []
-			for AS in path_raw:
-				AS = ast.literal_eval(AS)
-				if isinstance(AS, int):
-					path.append(AS)
-				else:
-					for real_AS in AS:
-						path.append(real_AS)
+				elem = rec.get_next_elem()
 
-			for i, AS in enumerate(path) :
-				# Add new routes
-
-				if i < (len(path) - 1):
-					neighbor = path[i+1]
-
-					update_graph(ASNs, AS, neighbor, news, withdrawn)
-
-		elem = rec.get_next_elem()
-
-	# Save
-	if rec.time - last_time_saved >= SAVE_INTERVAL:
-		save_process = multiprocessing.Process(target=save_graph, args=(ASNs.copy(),))
-		save_process.start()
-		last_time_saved = rec.time
+			# Save
+			if rec.time - last_time_saved >= args.save_rate*60:
+				save_process = multiprocessing.Process(target=save_graph, args=(ASNs.copy(), args.output_folder))
+				save_process.start()
+				last_time_saved = rec.time

@@ -1,0 +1,32 @@
+#!/usr/bin/python3
+
+from collect import realtime, past
+import argparse
+import sys
+
+def print_help():
+	pass
+
+if len(sys.argv) < 2:
+	print_help()
+	exit(-1)
+
+
+parser = argparse.ArgumentParser(description='A BGP collection')
+
+subparsers = parser.add_subparsers(help='What to do with that BGP data ?')
+
+# Parser for follow command
+parser_follow = subparsers.add_parser('follow', help='Collect BGP data in real time')
+parser_follow.add_argument('--save-rate', default=30, type=int, help='Saving rate, in minutes (Default 30 min)')
+parser_follow.add_argument('--output-folder', default=".", type=str, help='Output folder (defaults to current folder)')
+parser_follow.set_defaults(func=realtime.do_collection)
+
+parser_past = subparsers.add_parser('past', help='Collect Historical BGP data')
+parser_past.add_argument('--save-rate', default=30, type=int, help='Saving rate, in minutes (Default 30 min)')
+parser_past.add_argument('--output-folder', default=".", type=str, help='Output folder (defaults to current folder)')
+parser_past.set_defaults(func=past.do_collection)
+
+
+args = parser.parse_args()
+args.func(args)

@@ -3,12 +3,12 @@ import sys
 from datetime import datetime
 import time
 
-def save_graph(ASNs):
+def save_graph(ASNs, out_folder):
 	filename = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H%M')
 	print("Saving graph,", len(ASNs.nodes), "nodes,", len(ASNs.edges()), "edges...", end="")
 	for edge in ASNs.edges(data=True):
 		edge[2]["subnets"] = list(edge[2]["subnets"].keys())
-	nx.readwrite.gml.write_gml(ASNs, f"{sys.argv[1]}/{filename}.gml.gz", stringizer=nx.readwrite.gml.literal_stringizer)
+	nx.readwrite.gml.write_gml(ASNs, f"{out_folder}/{filename}.gml.gz", stringizer=nx.readwrite.gml.literal_stringizer)
 	print(" Saved")
 
 
