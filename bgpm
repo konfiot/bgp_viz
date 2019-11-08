@@ -23,10 +23,12 @@ parser_follow.add_argument('--output-folder', default=".", type=str, help='Outpu
 parser_follow.set_defaults(func=realtime.do_collection)
 
 parser_past = subparsers.add_parser('past', help='Collect Historical BGP data')
+parser_past.add_argument('--start', required=True, type=int, help='Starting timestamp')
+parser_past.add_argument('--stop', type=int, help='Stopping timestamp')
+parser_past.add_argument('--period', default=60*8, type=int, help='Record period, in minutes (Defaults to 8 hours))')
 parser_past.add_argument('--save-rate', default=30, type=int, help='Saving rate, in minutes (Default 30 min)')
 parser_past.add_argument('--output-folder', default=".", type=str, help='Output folder (defaults to current folder)')
 parser_past.set_defaults(func=past.do_collection)
-
 
 args = parser.parse_args()
 args.func(args)

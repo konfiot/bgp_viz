@@ -9,24 +9,17 @@ from _pybgpstream import BGPStream, BGPRecord, BGPElem
 import ast
 
 def do_collection(args):
-	START_TIMESTAMP = 1438417216
-	RECORD_PERIOD = 60*2
-
 	# Create stream
 	stream = BGPStream()
 	rec = BGPRecord()
 
-	#stream.add_interval_filter(START_TIMESTAMP,START_TIMESTAMP + RECORD_PERIOD)
-
 	# Consider Route Views Singapore only
-	stream.add_filter('collector','route-views.sg')
+	#stream.add_filter('collector','route-views.sg')
 
 	# Consider RIBs dumps only
-	stream.add_filter('record-type','ribs')
+	#stream.add_filter('record-type','ribs')
 
-	# Consider this time interval:
-	# Sat, 01 Aug 2015 7:50:00 GMT -  08:10:00 GMT
-	stream.add_interval_filter(1438415400,1438517600)
+	stream.add_interval_filter(args.start, args.stop if args.stop != None else (args.start + args.period))
 
 	stream.start()
 
@@ -35,7 +28,7 @@ def do_collection(args):
 
 	messages_recieved = 0
 
-	last_time_saved = START_TIMESTAMP
+	last_time_saved = args.start
 
 	while(stream.get_next_record(rec)):
 		if rec.status != "valid":
