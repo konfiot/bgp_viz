@@ -103,7 +103,7 @@ nx.draw(ASNs, pos, arrowstyle="->", with_labels=False, node_color=["r" if x in c
 print("drawing labels")
 nx.draw_networkx_labels(ASNs, pos, labels, font_size=8)
 
-plt.savefig("out,png", dpi=DPI)
+#plt.savefig("out,png", dpi=DPI)
 
 plt.show()
 
