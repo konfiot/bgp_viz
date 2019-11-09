@@ -6,5 +6,5 @@
 ```sh
 # Once you have installed the libbgpm dependancy
 pip install -r requirements.txt # Install python packages using pip :
-./dl_dbs.sh # Install db files used by the visualization tools :
+./dl_dbs.sh # Download db files used by the visualization tools :
 ```
