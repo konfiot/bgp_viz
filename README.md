@@ -1,6 +1,4 @@
 # Installing
-
-## Install dependancies
 **Install libpybgpstream using instructions here (use the instructions tailored for your distribution) : https://bgpstream.caida.org/docs/install/bgpstream**
 
 ```sh
