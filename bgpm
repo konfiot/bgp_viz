@@ -28,7 +28,7 @@ parser_past.add_argument('--save-rate', default=30, type=int, help='Saving rate,
 parser_past.add_argument('--output-folder', default=".", type=str, help='Output folder (defaults to current folder)')
 parser_past.set_defaults(func=past.do_collection)
 
-parser_past = subparsers.add_parser('visualize', help='Collect Historical BGP data')
+parser_past = subparsers.add_parser('visualize', help='Display data')
 parser_past.add_argument('file', type=str, help='Input file')
 parser_past.add_argument('--output-file', type=str, help='Save figure to file')
 parser_past.add_argument('--degree-display', type=int, help='Display ASN on nodes with degree greater than this value')
