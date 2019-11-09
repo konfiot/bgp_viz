@@ -6,9 +6,9 @@ import sys
 import matplotlib.pyplot as plt
 import json
 import random
-
+import numpy as np
 DEGREE_DISPLAY_LABEL = 100
-DPI = 6000
+DPI = 600 # tu te calmes
 
 def extract_core(ASNs):
 	cont = True
@@ -81,6 +81,19 @@ print("Calculating core")
 
 core = extract_core(ASNs)
 
+# get adj matrix
+A = nx.adjacency_matrix(ASNs)
+
+print('average degree : ', np.mean(np.sum(A, axis = 1)))
+
+# replace weighted entries with 1 for adj visualization
+A[A>0] = 1
+
+plt.imshow(A.todense())
+plt.title('Adjacency Matrix (unweighted)')
+plt.show()
+plt.close()
+
 print("Positioning")
 
 pos = {}
@@ -103,7 +116,7 @@ nx.draw(ASNs, pos, arrowstyle="->", with_labels=False, node_color=["r" if x in c
 print("drawing labels")
 nx.draw_networkx_labels(ASNs, pos, labels, font_size=8)
 
-#plt.savefig("out,png", dpi=DPI)
+#plt.savefig("out.png", dpi=DPI)
 
 plt.show()
 
