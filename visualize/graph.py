@@ -112,7 +112,19 @@ def do_graph(args):
 	for node in ASNs.nodes():
 		pos[node] = wiggle((0.5, 0.5) if node in core else initial_positions[country_continent[AS_countries[node]]] if node in AS_countries else (0.5,0.5), 0.1)
 
-	pos=nx.spring_layout(ASNs, pos=pos)
+	if args.layout == "spring":
+		pos=nx.spring_layout(ASNs, pos=pos)
+	elif args.layout == "kamada-kawai":
+		pos=nx.kamada_kawai_layout(ASNs, pos=pos)
+	elif args.layout == "spectral":
+		pos=nx.spectral_layout(ASNs, pos=pos)
+	elif args.layout == "planar":
+		pos=nx.planar_layout(ASNs, pos=pos)
+	elif args.layout == "random":
+		pos=nx.random_layout(ASNs, pos=pos)
+	elif args.layout == "shell":
+		pos=nx.shell_layout(ASNs, pos=pos)
+
 	labels = {}
 
 	if args.degree_display is not None :
