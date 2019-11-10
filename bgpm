@@ -28,13 +28,23 @@ parser_past.add_argument('--save-rate', default=30, type=int, help='Saving rate,
 parser_past.add_argument('--output-folder', default=".", type=str, help='Output folder (defaults to current folder)')
 parser_past.set_defaults(func=past.do_collection)
 
-parser_past = subparsers.add_parser('visualize', help='Display data')
-parser_past.add_argument('file', type=str, help='Input file')
-parser_past.add_argument('--output-file', type=str, help='Save figure to file')
-parser_past.add_argument('--degree-display', type=int, help='Display ASN on nodes with degree greater than this value')
-parser_past.add_argument('--dpi', default=300, type=int, help='Save figure to file')
+parser_stats = subparsers.add_parser('stats', help='Display stats on the data')
+parser_stats.add_argument('file', type=str, help='Input file')
+parser_stats.set_defaults(func=graph.do_stats)
 
-parser_past.set_defaults(func=graph.do_display)
+parser_adjimg = subparsers.add_parser('adjimg', help='Display the adjacency matrix of the graph')
+parser_adjimg.add_argument('file', type=str, help='Input file')
+parser_adjimg.add_argument('--output-file', type=str, help='Save figure to file')
+parser_adjimg.add_argument('--degree-display', type=int, help='Display ASN on nodes with degree greater than this value')
+parser_adjimg.add_argument('--dpi', default=300, type=int, help='Save figure to file')
+parser_adjimg.set_defaults(func=graph.do_adjimg)
+
+parser_graph = subparsers.add_parser('graph', help='Display a graph of the data')
+parser_graph.add_argument('file', type=str, help='Input file')
+parser_graph.add_argument('--output-file', type=str, help='Save figure to file')
+parser_graph.add_argument('--degree-display', type=int, help='Display ASN on nodes with degree greater than this value')
+parser_graph.add_argument('--dpi', default=300, type=int, help='Save figure to file')
+parser_graph.set_defaults(func=graph.do_graph)
 
 
 args = parser.parse_args()

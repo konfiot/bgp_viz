@@ -6,8 +6,30 @@ import matplotlib.pyplot as plt
 import json
 import random
 import numpy as np
+
 #DEGREE_DISPLAY_LABEL = 100
 #DPI = 600 # tu te calmes
+
+colors = {
+	"Antartica": "skyblue",
+	"Asia": "yellow",
+	"Africa": "violet",
+	"Europe": "blue",
+	"North America": "tan",
+	"Oceania": "seagreen",
+	"South America": "orange"
+}
+
+initial_positions = {
+	"Antartica": (0.1, 0.1),
+	"Asia": (0.9, 0.5),
+	"Africa": (0.5, 0.1),
+	"Europe": (0.5, 0.9),
+	"North America": (0.1, 0.9),
+	"Oceania": (0.9, 0.1),
+	"South America": (0.1,0.5)
+}
+
 
 def extract_core(ASNs):
 	cont = True
@@ -26,7 +48,7 @@ def wiggle(t, r):
 	b += random.uniform(-r,r)
 	return (a,b)
 
-def do_display(args):
+def load_AS_countries():
 	AS_countries = {}
 	AS_files = glob.glob("./db/*_asn")
 	for AS_file in AS_files:
@@ -38,53 +60,51 @@ def do_display(args):
 				AS_countries[AS] = country
 
 				line = AS_fd.readline()
+	return AS_countries
 
+def load_country_continent():
 	country_continent = {}
 	with open("continents.json", "r") as continent_file:
 		continents = json.load(continent_file)
 		for continent in continents:
 			country_continent[continent["Two_Letter_Country_Code"]] = continent["Continent_Name"]
+	return country_continent
 
-	colors = {
-		"Antartica": "skyblue",
-		"Asia": "yellow",
-		"Africa": "violet",
-		"Europe": "blue",
-		"North America": "tan",
-		"Oceania": "seagreen",
-		"South America": "orange"
-	}
 
-	initial_positions = {
-		"Antartica": (0.1, 0.1),
-		"Asia": (0.9, 0.5),
-		"Africa": (0.5, 0.1),
-		"Europe": (0.5, 0.9),
-		"North America": (0.1, 0.9),
-		"Oceania": (0.9, 0.1),
-		"South America": (0.1,0.5)
-	}
 
-	print(f"Reading {args.file}")
 
+def do_stats(args) :
 	ASNs = nx.convert_node_labels_to_integers(nx.read_gml(args.file))
 
-	print(len(ASNs.nodes()), "nodes to display")
+	print(len(ASNs.nodes()), "nodes")
+	print(len(ASNs.edges()), "edges")
 
-	core = extract_core(ASNs)
+	A = nx.adjacency_matrix(ASNs)
+	print('Average degree : ', np.mean(np.sum(A, axis = 1)))
 
-# get adj matrix
+def do_adjimg(args):
+	ASNs = nx.convert_node_labels_to_integers(nx.read_gml(args.file))
+	# get adj matrix
 	A = nx.adjacency_matrix(ASNs)
 
-	print('average degree : ', np.mean(np.sum(A, axis = 1)))
-
-# replace weighted entries with 1 for adj visualization
+	# replace weighted entries with 1 for adj visualization
 	A[A>0] = 1
 
 	plt.imshow(A.todense())
+
+	if args.output_file is not None:
+		plt.savefig(args.output_file, dpi=args.dpi)
+
 	plt.title('Adjacency Matrix (unweighted)')
 	plt.show()
-	plt.close()
+
+def do_graph(args):
+	AS_countries = load_AS_countries()
+	country_continent = load_country_continent()
+
+	ASNs = nx.convert_node_labels_to_integers(nx.read_gml(args.file))
+
+	core = extract_core(ASNs)
 
 	print("Positioning")
 
