@@ -16,10 +16,12 @@ def do_collection(args):
 	# Consider Route Views Singapore only
 	#stream.add_filter('collector','route-views.sg')
 
+	stream.add_filter('project','routeviews')
+
 	# Consider RIBs dumps only
 	#stream.add_filter('record-type','ribs')
 
-	stream.add_interval_filter(args.start, args.stop if args.stop != None else (args.start + args.period))
+	stream.add_interval_filter(args.start, args.stop if args.stop != None else (args.start + 60*args.period))
 
 	stream.start()
 
