@@ -26,6 +26,8 @@ parser_past.add_argument('--stop', type=int, help='Stopping timestamp')
 parser_past.add_argument('--period', default=60*8, type=int, help='Record period, in minutes (Defaults to 8 hours))')
 parser_past.add_argument('--save-rate', default=30, type=int, help='Saving rate, in minutes (Default 30 min)')
 parser_past.add_argument('--output-folder', default=".", type=str, help='Output folder (defaults to current folder)')
+parser_past.add_argument('--project', type=str, choices=["routeviews", "ris"], help='Only get data from one project')
+parser_past.add_argument('--collector', type=str, nargs="*", help='Only get data from these collectors')
 parser_past.set_defaults(func=past.do_collection)
 
 parser_stats = subparsers.add_parser('stats', help='Display stats on the data')
