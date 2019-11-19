@@ -7,7 +7,7 @@ import sys
 
 parser = argparse.ArgumentParser(description='A BGP collection')
 
-subparsers = parser.add_subparsers(help='What to do with that BGP data ?')
+subparsers = parser.add_subparsers(help='What to do with that BGP data ?', required=True, dest="command")
 
 # Parser for follow command
 parser_follow = subparsers.add_parser('follow', help='Collect BGP data in real time')
